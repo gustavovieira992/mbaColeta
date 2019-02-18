@@ -1,0 +1,69 @@
+import { Component } from '@angular/core';
+import { Geolocation } from '@ionic-native/geolocation/ngx';
+import { LoadingController } from '@ionic/angular';
+
+declare var google;
+
+@Component({
+  selector: 'app-tab1',
+  templateUrl: 'tab1.page.html',
+  styleUrls: ['tab1.page.scss']
+})
+export class Tab1Page {
+
+  mapRef = null;
+
+  constructor(
+    private geolocation: Geolocation,
+    private loadingCtrl: LoadingController
+  ) {
+
+  }
+
+  ngOnInit() {
+    this.loadMap();
+  }
+
+  async loadMap() {
+    const loading = await this.loadingCtrl.create();
+    loading.present();
+    const myLatLng = await this.getLocation();
+    const mapEle: HTMLElement = document.getElementById('map');
+    this.mapRef = new google.maps.Map(mapEle, {
+      center: myLatLng,
+      zoom: 12
+    });
+    google.maps.event
+      .addListenerOnce(this.mapRef, 'idle', () => {
+        loading.dismiss();
+        this.addMaker(myLatLng.lat, myLatLng.lng);
+      });
+  }
+
+  addInfoWindowToMarker(marker) {
+    var infoWindowContent = '<div id="content"><h1 id="firstHeading" class="firstHeading">' + marker.title + '</h1></div>';
+    var infoWindow = new google.maps.InfoWindow({
+      content: infoWindowContent
+    });
+    marker.addListener('click', () => {
+      infoWindow.open(this.mapRef, marker);
+    });
+  }
+
+  private addMaker(lat: number, lng: number) {
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map: this.mapRef,
+      title: 'Caesb'
+    });
+    this.addInfoWindowToMarker(marker);
+  }
+
+  private async getLocation() {
+    const rta = await this.geolocation.getCurrentPosition();
+    return {
+      lat: rta.coords.latitude,
+      lng: rta.coords.longitude
+    };
+  }
+}
